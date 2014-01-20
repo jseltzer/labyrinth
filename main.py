@@ -16,8 +16,6 @@ input assumed to always be well-formed
 import random, os, pickle
 
 
-
-
 """File/Config Handling"""
 
 def check_input(typo: int) -> str:
@@ -32,10 +30,10 @@ def check_input(typo: int) -> str:
 	print("youre running check_input")
 
 	if typo:
-		print("It appears you didn't type 'y' or 'n'. Let's try again!\n")
+		print("It appears you didn't type [l/w/r]. Let's try again!\n")
 
 	choice = input("Do you want to load a savefile [l], generate a new world [w], or create a random one [r]?  [l/w/r] ")
-	choice = cases[choice] if case_check(cases, choice) else check_input(1)
+	choice = cases[choice] if in_case(cases, choice) else check_input(1)
 	return choice
 
 def get_filename(typo: int) -> str:
@@ -43,37 +41,43 @@ def get_filename(typo: int) -> str:
 
 	if typo:
 		print("It appears you didn't enter a proper save file location. Please try again.\n")
+	
 	filename = input("Please input the location of your save file: ")
-	return filename
 
-def encode_world(world: list) -> list:
+	if is_file(filename):
+		return filename
+	else:
+		return get_filename(1)
+
+def encode_world(world: list, gdata) -> list:
+	""""Pushes world to gdata[0]."""
 	pass
 
-def decode_world(wdata: list) -> list:
+def decode_world(gdata: list) -> list:
+	"""Pushes gdata onto world."""
 	pass
 
 def load_file(filename: str) -> list:
 	"""Load savefile using pickle."""
 
-	file = open(filename, 'rb') if is_file(filename) else get_filename(1)
-	wdata = pickle.load(file)
+	file = open(filename, 'rb')
+	gdata = pickle.load(file)
 	file.close()
-	return wdata
+	return gdata
 
-def save_file(wdata: list, filename: str):
+def save_file(gdata: list, filename: str) -> None:
 	"""Create/overwrite savefile using pickle."""
 	#note: filename should have already been confirmed valid/existent (depending) at this point
 
 	file = open(filename, 'wb')
-	pickle.dump(wdata, file, protocol=pickle.HIGHEST_PROTOCOL)
+	pickle.dump(gdata, file, protocol=pickle.HIGHEST_PROTOCOL)
 	file.close()
-
-	return wdata
 
 """World Generation"""
 
-def gen_world(user_input) -> list:
-	"""Generate a new world, return wdata."""
+def gen_world(config: list) -> list:
+	"""Generate a new world, return gdata.
+	config determined by user input and/or random and/or default values."""
 
 	if not user_input:
 		#generate random
@@ -85,48 +89,42 @@ def gen_world(user_input) -> list:
 	width = 6
 	height = 7
 
-	wdata = [(width, height), {1:(3,4), 2:[(3,2),(2,3)]}, ((2,4,6), set([0,1,2]), set(range(15)))]
+	gdata = [(width, height), {1:(3,4), 2:[(3,2),(2,3)]}, ((2,4,6), set([0,1,2]), set(range(15)))]
 
-	return wdata
+	return gdata
 
-def populate_world(wdata: list) -> list:
+def populate_world(gdata: list) -> list:
 	"""Determine spawns and construct 2d array of world."""
 
-	dimensions = wdata[0]
-	spawns = wdata[1]
+	dimensions = gdata[0]
+	spawns = gdata[1]
 	
-	world = spawn_array(dimensions[0], dimensions[1])
+	world = create_array(dimensions[0], dimensions[1])
 	
 	world = inject_spawns(world, spawns)
 
+	return world
 
 def inject_spawns(world: list, spawns: dict or list) -> list:
-
+	"""This could be better off as recursive, but assuming only 1 later of depth (as should be), all is well."""
 	#iterate through and interpolate spawns
 
+	print(spawns)
 	for id in spawns:
-		i = 0
-		if type(spawns) == dict:
-			coors = spawns[id]
+		if isinstance(spawns[id], tuple):
+			cors = spawns[id]
+			world[cors[0]][cors[1]] = id
 		else:
-			coors = spawns[i]
-
-		i += 1
-
-		if type(coors) == tuple:
-			print(coors)
-			x, y = coors[0], coors[1]
-			world[x][y] = id
-			print(type(world))
-		else:
-			inject_spawns(world, coors)
+			for tup in spawns[id]:
+				cors = tup
+				world[cors[0]][cors[1]] = id
+				print([cors[0],cors[1]])
 
 		# check if spawn ID in unlocked_items
-	print(world)
 	return world
 
 
-def spawn_array(width:int, height:int) -> list:
+def create_array(width:int, height:int) -> list:
 	"""Construct a 2d array from dimensions."""
 	array = [[0] * width] * height
 	return array
@@ -145,15 +143,18 @@ def print_world(array: list):
 
 """Status Declaration"""
 
-def check_in_bounds(dimensions: tuple, obj) -> bool:
+def in_bounds(dimensions: tuple, obj) -> bool:
 	pass
 
-def is_file(filename) -> bool:
+def is_file(filename: str) -> bool:
 	#i might want to implement actual code at some point
 	#possibly
-	return True if '.dat' in filename else False
+	if 'dat' in filename:
+		return True
+	else:
+		return False
 
-def case_check(cases: dict or list, choice: str or int) -> bool:
+def in_case(cases: dict or list, choice: str or int) -> bool:
 	return True if choice in cases else False
 
 """(Nearly) Abstract Game Init Level"""
@@ -178,29 +179,30 @@ def init_game():
 
 	while True:
 		"""Get user input"""
+
 		choice = check_input(0)
 
 		if not choice:
 			"""Load savefile"""
 			filename = get_filename(0)
-			wdata = load_file(filename)
+			gdata = load_file(filename)
 		elif choice == 1:
+			"""Generate gdata."""
 			print('gen')
-			#generate
-			wdata = gen_world(1)
+			gdata = gen_world(1)
 		else:
+			"""Generate random gdata."""
 			print('randgen')
-			#randgen
-			wdata = gen_world(0)
+			gdata = gen_world(0)
 
-		if wdata is not None:
-			world = populate_world(wdata)
+		if gdata is not None:
+			world = populate_world(gdata)
 		else:
 			break_game("the save file is corrupted")
 			break
 			#fix error handling for pickle
-
-		print_world(world)
+		print(world)
+#		print_world(world)
 		break
 
 
