@@ -20,19 +20,22 @@ import random, os, pickle
 
 """File/Config Handling"""
 
-def check_file_input(typo: int) -> str:
+def check_input(typo: int) -> str:
 	"""Receive file string from user."""
 
 	cases = {
-		'y' : 1,
-		'n' : 0,
+		'l' : 0,
+		'w' : 1,
+		'r' : 2,
 	}
+
+	print("youre running check_input")
 
 	if typo:
 		print("It appears you didn't type 'y' or 'n'. Let's try again!\n")
 
-	choice = input("Do you want to load your game from a file? [y/n] ")
-	choice = cases[choice] if case_check(cases, choice) else check_file_input(1)
+	choice = input("Do you want to load a savefile [l], generate a new world [w], or create a random one [r]?  [l/w/r] ")
+	choice = cases[choice] if case_check(cases, choice) else check_input(1)
 	return choice
 
 def get_filename(typo: int) -> str:
@@ -43,7 +46,13 @@ def get_filename(typo: int) -> str:
 	filename = input("Please input the location of your save file: ")
 	return filename
 
-def decode_file(filename: str) -> list:
+def encode_world(world: list) -> list:
+	pass
+
+def decode_world(wdata: list) -> list:
+	pass
+
+def load_file(filename: str) -> list:
 	"""Load savefile using pickle."""
 
 	file = open(filename, 'rb') if is_file(filename) else get_filename(1)
@@ -51,7 +60,7 @@ def decode_file(filename: str) -> list:
 	file.close()
 	return wdata
 
-def encode_file(wdata: list, filename: str):
+def save_file(wdata: list, filename: str):
 	"""Create/overwrite savefile using pickle."""
 	#note: filename should have already been confirmed valid/existent (depending) at this point
 
@@ -61,14 +70,18 @@ def encode_file(wdata: list, filename: str):
 
 	return wdata
 
-def save_game(wdata, save):
-	"""Dump wdata list into specified file."""
-
 """World Generation"""
 
-def new_world() -> list:
-	"""Construct a new world. (Outputs wdata similar to decode_file)"""
+def gen_world(user_input) -> list:
+	"""Generate a new world, return wdata."""
 
+	if not user_input:
+		#generate random
+		pass
+	else:
+		#generate based on user_input
+		pass
+#temp stuff vvv
 	width = 6
 	height = 7
 
@@ -77,27 +90,43 @@ def new_world() -> list:
 	return wdata
 
 def populate_world(wdata: list) -> list:
-	"""Construct and determine tiles of world.
-
-	structure of return list:
-	2d array
-	"""
+	"""Determine spawns and construct 2d array of world."""
 
 	dimensions = wdata[0]
-	tiles = wdata[1]
+	spawns = wdata[1]
 	
 	world = spawn_array(dimensions[0], dimensions[1])
 	
-	#iterate through and interpolate tiles
+	world = inject_spawns(world, spawns)
 
-	for dict in tiles:
-		pass
-		# check if tile in unlocked_items
 
+def inject_spawns(world: list, spawns: dict or list) -> list:
+
+	#iterate through and interpolate spawns
+
+	for id in spawns:
+		i = 0
+		if type(spawns) == dict:
+			coors = spawns[id]
+		else:
+			coors = spawns[i]
+
+		i += 1
+
+		if type(coors) == tuple:
+			print(coors)
+			x, y = coors[0], coors[1]
+			world[x][y] = id
+			print(type(world))
+		else:
+			inject_spawns(world, coors)
+
+		# check if spawn ID in unlocked_items
+	print(world)
 	return world
 
 
-def spawn_array(width: int, height: int) -> list:
+def spawn_array(width:int, height:int) -> list:
 	"""Construct a 2d array from dimensions."""
 	array = [[0] * width] * height
 	return array
@@ -115,6 +144,9 @@ def print_world(array: list):
 #not important
 
 """Status Declaration"""
+
+def check_in_bounds(dimensions: tuple, obj) -> bool:
+	pass
 
 def is_file(filename) -> bool:
 	#i might want to implement actual code at some point
@@ -139,32 +171,39 @@ def init_game():
 	"""Variable declarations"""
 
 	default_unlocked_items = set(range(10))
-	#define in default file?
+	#define in default file
 	on = True
 	game = on
 
 
 	while True:
 		"""Get user input"""
-		if check_file_input(0):
-			filename = get_filename(0)
-			wdata = decode_file(filename)
-		else:
-			wdata = new_world()
+		choice = check_input(0)
 
-		print(wdata)
+		if not choice:
+			"""Load savefile"""
+			filename = get_filename(0)
+			wdata = load_file(filename)
+		elif choice == 1:
+			print('gen')
+			#generate
+			wdata = gen_world(1)
+		else:
+			print('randgen')
+			#randgen
+			wdata = gen_world(0)
+
 		if wdata is not None:
-			pass
-#			world = populate_world(wdata)
+			world = populate_world(wdata)
 		else:
 			break_game("the save file is corrupted")
 			break
+			#fix error handling for pickle
 
+		print_world(world)
 		break
 
 
-#	world = populate_world(wdata)
-#	print_world(world)
 
 
 
