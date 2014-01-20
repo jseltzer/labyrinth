@@ -30,9 +30,16 @@ input assumed to always be well-formed
 
 """
 
+"""Import and..."""
+
+import random, os, pickle
+
+
+
+
 """File/Config Handling"""
 
-def want_file_input(typo: int) -> str:
+def check_file_input(typo: int) -> str:
 	"""Receive file string from user."""
 
 	cases = {
@@ -44,70 +51,59 @@ def want_file_input(typo: int) -> str:
 		print("It appears you didn't type 'y' or 'n'. Let's try again!\n")
 
 	choice = input("Do you want to load your game from a file? [y/n] ")
-
-	choice = cases[choice] if case_check(cases, choice) else want_file_input(1)
-
+	choice = cases[choice] if case_check(cases, choice) else check_file_input(1)
 	return choice
 
-def get_file_input(typo: int) -> 'file':
+def get_filename(typo: int) -> str:
 	"""Return file object given string w/ location."""
 
-	if typo: print("It appears you didn't enter a proper save file location. Please try again.\n")
+	if typo:
+		print("It appears you didn't enter a proper save file location. Please try again.\n")
+	filename = input("Please input the location of your save file: ")
+	return filename
 
-	location = input("Please input the location of your save file: ")
+def decode_file(filename: str) -> list:
+	"""Load savefile using pickle."""
 
-	file = open(location, 'r') if is_file(location) else get_file_input(1)
-
-	return file
-
-def decode_file(file: str) -> list:
-	"""Construct config command from file input.
-
-	structure of return list:
-	[(width, height), [(id, x_cor, y_cor), (id, x_cor, y_cor)], [(skills_levels_list), set([inventory_list]), set([unlocked_items_list)]
-	/// window_size \\\///			spawns		\\\///		player/game stats			\\\
-	1 dict per item 
-	"""
-
-	config = []
-
-	file_obj = file.read()
+	file = open(filename, 'rb') if is_file(filename) else get_filename(1)
+	wdata = pickle.load(file)
 	file.close()
-	file = file_obj
+	return wdata
 
+def encode_file(wdata: list, filename: str):
+	"""Create/overwrite savefile using pickle."""
+	#note: filename should have already been confirmed valid/existent (depending) at this point
 
-	#REDO PARSER
+	file = open(filename, 'wb')
+	pickle.dump(wdata, file, protocol=pickle.HIGHEST_PROTOCOL)
+	file.close()
 
-	#DO NOT check if the points make sense here
+	return wdata
 
-	return config
-
-
-def encode_file():
-	"""Mirrors decode_file
-	turns map/items/stats into config list
-	"""
-	return config
-
-def save_game(config, save):
-	"""Dump config list into specified file."""
+def save_game(wdata, save):
+	"""Dump wdata list into specified file."""
 
 """World Generation"""
 
 def new_world() -> list:
-	"""Construct a new world. (Outputs config similar to decode_file)"""
-	pass
+	"""Construct a new world. (Outputs wdata similar to decode_file)"""
 
+	width = 6
+	height = 7
 
-def populate_world(config: list) -> list:
+	wdata = [(width, height), {1:(3,4), 2:[(3,2),(2,3)]}, ((2,4,6), set([0,1,2]), set(range(15)))]
+
+	return wdata
+
+def populate_world(wdata: list) -> list:
 	"""Construct and determine tiles of world.
 
 	structure of return list:
 	2d array
 	"""
 
-	dimensions = config[0]
-	tiles = config[1]
+	dimensions = wdata[0]
+	tiles = wdata[1]
 	
 	world = spawn_array(dimensions[0], dimensions[1])
 	
@@ -139,10 +135,10 @@ def print_world(array: list):
 
 """Status Declaration"""
 
-def is_file(file) -> bool:
+def is_file(filename) -> bool:
 	#i might want to implement actual code at some point
 	#possibly
-	return True if ('.lab' or '.world') in file else False
+	return True if '.dat' in filename else False
 
 def case_check(cases: dict or list, choice: str or int) -> bool:
 	return True if choice in cases else False
@@ -162,30 +158,31 @@ def init_game():
 	"""Variable declarations"""
 
 	default_unlocked_items = set(range(10))
+	#define in default file?
 	on = True
 	game = on
 
 
 	while True:
-		if want_file_input(0):
-			file = get_file_input(0)
-			config = decode_file(file)
+		"""Get user input"""
+		if check_file_input(0):
+			filename = get_filename(0)
+			wdata = decode_file(filename)
 		else:
-			config = new_world()
+			wdata = new_world()
 
-		if config is not None:
+		print(wdata)
+		if wdata is not None:
 			pass
-#			world = populate_world(config)
+#			world = populate_world(wdata)
 		else:
 			break_game("the save file is corrupted")
 			break
 
 		break
 
-	#file is opened in get_file_input and closed in decode_file - potential issue?
 
-
-#	world = populate_world(config)
+#	world = populate_world(wdata)
 #	print_world(world)
 
 
