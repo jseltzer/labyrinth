@@ -14,18 +14,20 @@ IDs:
 2 = lvl_tile
 
 
-save file will store skills_levels + inventory + unlocked_items 
-the rest of the game will build itself dependent upon map/skill_levels/unlocked_items
 
+concerning save file {
+	will store skills_levels + inventory + unlocked_items 
+	the rest of the game will build itself dependent upon map/skill_levels/unlocked_items
 
+	world decoder wont bother to check if two IDs allocated to same point
+	(the latter will override)
 
-no user error checking, yet.
+	for the love of rms DO NOT put '\n' anywhere in the file you pleb
+}
+
+no substantial error checking, yet.
 input assumed to always be well-formed
 
-world decoder wont bother to check if two IDs allocated to same point
-(the latter will override)
-
-for the love of rms DO NOT put '\n' anywhere in this file you pleb
 """
 
 """File/Config Handling"""
@@ -43,11 +45,7 @@ def want_file_input(typo: int) -> str:
 
 	choice = input("Do you want to load your game from a file? [y/n] ")
 
-	if case_check(cases, choice):
-		choice = cases[choice]
-
-	else:
-		choice = want_file_input(1)
+	choice = cases[choice] if case_check(cases, choice) else want_file_input(1)
 
 	return choice
 
@@ -77,14 +75,9 @@ def decode_file(file: str) -> list:
 	file.close()
 	file = file_obj
 
-	config = file.split('\n')[:5]
 
-	#the parser for the 1st line is rudimentary, so the input must be exact
+	#REDO PARSER
 
-	
-
-	print(config[1])
-	#construct config
 	#DO NOT check if the points make sense here
 
 	return config
@@ -147,15 +140,17 @@ def print_world(array: list):
 """Status Declaration"""
 
 def is_file(file) -> bool:
+	#i might want to implement actual code at some point
+	#possibly
 	return True if ('.lab' or '.world') in file else False
 
 def case_check(cases: dict or list, choice: str or int) -> bool:
 	return True if choice in cases else False
 
-def game_is_on() -> bool:
-	pass
-
 """(Nearly) Abstract Game Init Level"""
+
+def break_game(crash_msg: str) -> bool:
+	print("Labyrinth has crashed: {:s}.".format(crash_msg))
 
 def init_game():
 	"""
@@ -167,16 +162,27 @@ def init_game():
 	"""Variable declarations"""
 
 	default_unlocked_items = set(range(10))
+	on = True
+	game = on
 
 
-	if want_file_input(0):
-		file = get_file_input(0)
-		config = decode_file(file)
-	else:
-		config = new_world()
-		print(config)
-	# config = decode_file(get_file_input(0)) if want_file_input(0) else new_world()
-	#this line is equivalent to above blocks
+	while True:
+		if want_file_input(0):
+			file = get_file_input(0)
+			config = decode_file(file)
+		else:
+			config = new_world()
+
+		if config is not None:
+			pass
+#			world = populate_world(config)
+		else:
+			break_game("the save file is corrupted")
+			break
+
+		break
+
+	#file is opened in get_file_input and closed in decode_file - potential issue?
 
 
 #	world = populate_world(config)
