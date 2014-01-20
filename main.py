@@ -1,29 +1,10 @@
 """
 Labyrinth (C) 2014 by Josh Samson-Seltzer
 
-Structure of save file:
-Opening (0th) line = (width, height)
-1st line = [(ID, x_cor, y_cor), (ID, x_cor, y_cor)]
-2nd line = (skill_levels_tuple)
-3rd line = [inventory_list]
-4th line = [unlocked_items_list] #Note: custom save games don't have to include default unlocked_items
-
 IDs:
 0 = blank_tile
 1 = player_tile
 2 = lvl_tile
-
-
-
-concerning save file {
-	will store skills_levels + inventory + unlocked_items 
-	the rest of the game will build itself dependent upon map/skill_levels/unlocked_items
-
-	world decoder wont bother to check if two IDs allocated to same point
-	(the latter will override)
-
-	for the love of rms DO NOT put '\n' anywhere in the file you pleb
-}
 
 no substantial error checking, yet.
 input assumed to always be well-formed
