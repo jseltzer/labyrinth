@@ -27,8 +27,6 @@ def check_input(typo: int) -> str:
 		'r' : 2,
 	}
 
-	print("youre running check_input")
-
 	if typo:
 		print("It appears you didn't type [l/w/r]. Let's try again!\n")
 
@@ -49,12 +47,27 @@ def get_filename(typo: int) -> str:
 	else:
 		return get_filename(1)
 
-def encode_world(world: list, gdata) -> list:
-	""""Pushes world to gdata[0]."""
-	pass
+def encode_game(world: list, gdata: list) -> list:
+	wdata = encode_world(world)
+	gdata[0] = wdata
+	return gdata
 
-def decode_world(gdata: list) -> list:
-	"""Pushes gdata onto world."""
+def encode_world(world: list) -> list:
+	""""Converts world array to wdata."""
+	#implement!
+	pass
+	return wdata
+
+def decode_game(gdata: list) -> list:
+	"""Create world from game data."""
+
+	wdata = gdata[0]
+	world = decode_world(wdata)
+	#check spawn ID's against unlocked_items
+	return world
+
+def decode_world(wdata: list) -> list:
+	"""Convert wdata to world array."""
 	pass
 
 def load_file(filename: str) -> list:
@@ -65,9 +78,12 @@ def load_file(filename: str) -> list:
 	file.close()
 	return gdata
 
-def save_file(gdata: list, filename: str) -> None:
+def save_file(gdata: list, world: list, filename: str) -> None:
 	"""Create/overwrite savefile using pickle."""
 	#note: filename should have already been confirmed valid/existent (depending) at this point
+
+	wdata = encode_world(gdata)
+	gdata[0] = wdata
 
 	file = open(filename, 'wb')
 	pickle.dump(gdata, file, protocol=pickle.HIGHEST_PROTOCOL)
@@ -79,6 +95,8 @@ def gen_world(config: list) -> list:
 	"""Generate a new world, return gdata.
 	config determined by user input and/or random and/or default values."""
 
+
+#make sure stuff is in unlocked_items
 	if not user_input:
 		#generate random
 		pass
@@ -89,15 +107,22 @@ def gen_world(config: list) -> list:
 	width = 6
 	height = 7
 
-	gdata = [(width, height), {1:(3,4), 2:[(3,2),(2,3)]}, ((2,4,6), set([0,1,2]), set(range(15)))]
+	wdata = [(width, height), {1:(3,4), 2:[(3,2),(2,3)]}, ((2,4,6), set([0,1,2]), set(range(15)))]
 
+	return wdata
+
+def gen_game(wdata: list) -> list:
+	"""Given generated world/world instructions, construct gdata."""
+
+	gdata = []
 	return gdata
 
-def populate_world(gdata: list) -> list:
+
+def populate_world(wdata: list) -> list:
 	"""Determine spawns and construct 2d array of world."""
 
-	dimensions = gdata[0]
-	spawns = gdata[1]
+	dimensions = wdata[0]
+	spawns = wdata[1]
 	
 	world = create_array(dimensions[0], dimensions[1])
 	
@@ -109,7 +134,6 @@ def inject_spawns(world: list, spawns: dict or list) -> list:
 	"""This could be better off as recursive, but assuming only 1 later of depth (as should be), all is well."""
 	#iterate through and interpolate spawns
 
-	print(spawns)
 	for id in spawns:
 		if isinstance(spawns[id], tuple):
 			cors = spawns[id]
@@ -118,7 +142,6 @@ def inject_spawns(world: list, spawns: dict or list) -> list:
 			for tup in spawns[id]:
 				cors = tup
 				world[cors[0]][cors[1]] = id
-				print([cors[0],cors[1]])
 
 		# check if spawn ID in unlocked_items
 	return world
@@ -126,7 +149,7 @@ def inject_spawns(world: list, spawns: dict or list) -> list:
 
 def create_array(width:int, height:int) -> list:
 	"""Construct a 2d array from dimensions."""
-	array = [[0] * width] * height
+	array = [[0 for i in range(width)] for i in range(height)]
 	return array
 
 
@@ -178,32 +201,38 @@ def init_game():
 
 
 	while True:
-		"""Get user input"""
+		"""Init loop."""
 
 		choice = check_input(0)
 
 		if not choice:
-			"""Load savefile"""
+			"""Load gdata and decode from savefile."""
 			filename = get_filename(0)
 			gdata = load_file(filename)
+			world = decode_game(gdata)
 		elif choice == 1:
-			"""Generate gdata."""
+			"""Generate gdata and decode."""
+			#uhoh
 			print('gen')
-			gdata = gen_world(1)
+			#involve config somehow
+			gdata = gen_world()
 		else:
-			"""Generate random gdata."""
+			"""Generate random gdata and decode."""
+			#uhoh
 			print('randgen')
-			gdata = gen_world(0)
+			gdata = gen_world()
 
 		if gdata is not None:
-			world = populate_world(gdata)
+			wdata = gdata[:2]
+			world = populate_world(wdata)
 		else:
 			break_game("the save file is corrupted")
 			break
 			#fix error handling for pickle
-		print(world)
-#		print_world(world)
-		break
+		print_world(world)
+
+		while True:
+			"""User input loop."""
 
 
 
