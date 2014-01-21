@@ -15,6 +15,42 @@ input assumed to always be well-formed
 
 import random, os, pickle
 
+"""Classes"""
+
+class Player():
+	pass
+
+class Game():
+	def __init__(self, filename):
+		self.filename = filename
+
+	def build_wdata(self: 'Game', wdata: list) -> list:
+		"""Generate gdata from wdata."""
+		gdata = []
+		return gdata
+
+
+	def load_gdata(self: 'Game', gdata: list):
+		"""Pass gdata to game."""
+		pass
+
+
+class World():
+	pass
+
+class Utility():
+	pass
+
+class File_Handler():
+	def __init__(self):
+		pass
+
+		
+
+
+
+
+
 
 """File/Config Handling"""
 
@@ -191,15 +227,6 @@ def init_game():
 	to allow for easier module debugging: just use intermediate assignment
 	"""
 
-
-	"""Variable declarations"""
-
-	default_unlocked_items = set(range(10))
-	#define in default file
-	on = True
-	game = on
-
-
 	while True:
 		"""Init loop."""
 
@@ -231,11 +258,8 @@ def init_game():
 			#fix error handling for pickle
 		print_world(world)
 
-		while True:
-			"""User input loop."""
-
-
-
+		#while True:
+		"""User input loop."""
 
 
 
